@@ -14,11 +14,32 @@
         let infoctx;
         let mySquare = {};
 
+        const orderKeys = (obj, expected) => {
+
+          var keys = Object.keys(obj).sort(function keyOrder(k1, k2) {
+              if (k1 < k2) return -1;
+              else if (k1 > k2) return +1;
+              else return 0;
+          });
+
+          var i, after = {};
+          for (i = 0; i < keys.length; i++) {
+            after[keys[i]] = obj[keys[i]];
+            delete obj[keys[i]];
+          }
+
+          for (i = 0; i < keys.length; i++) {
+            obj[keys[i]] = after[keys[i]];
+          }
+          return obj;
+        };
+
         const draw = () => {
-            console.log(draws);
-            let keys = Object.keys(draws);
-            for(var i=keys.length-1; i>=0; i--){
-                let drawing = draws[keys[i]];
+
+            let orderedDraws = orderKeys(draws); console.log(draws);
+            let keys = Object.keys(orderedDraws);
+            for(var i=0; i<keys.length; i++){
+                let drawing = orderedDraws[keys[i]];
                 ctx.save();
                 ctx.fillStyle = drawing.color;
                 ctx.fillRect(drawing.x, drawing.y, drawing.width, drawing.height);
@@ -29,6 +50,8 @@
         const connectSocket = () => {
             let sock = io.connect();
 
+            mySquare.user = sock.id;
+
             sock.on('connect', () => {
                 console.log('connecting');
 
@@ -36,12 +59,12 @@
             });
 
             sock.on('addSquare', function(data){
-                console.log(data);
                 draws[data.time] = data;
             })
 
             setInterval(function(){ 
                 draw();
+                
                 sock.emit('addSquare', mySquare);
             }, 1000);
         };
@@ -54,12 +77,13 @@
             userInfo = document.querySelector('#userInfo');
 
             mySquare = {
-                x: parseInt(Math.random()*200),
-                y: parseInt(Math.random()*200),
-                width: parseInt(Math.random()*100)+15,
-                height: parseInt(Math.random()*100)+15,
+                x: parseInt(Math.random()*100),
+                y: parseInt(Math.random()*100),
+                width: parseInt(Math.random()*100)+50,
+                height: parseInt(Math.random()*100)+50,
                 color: 'rgb('+parseInt(Math.random()*255)+','+parseInt(Math.random()*255)+','+parseInt(Math.random()*255)+')',
                 time: Date.now(),
+                user: '',
             };
 
             userInfo.innerHTML = 'MY SQUARE:<br>x: ' + mySquare.x;
